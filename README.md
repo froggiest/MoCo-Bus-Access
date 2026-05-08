@@ -2,7 +2,7 @@
 
 ### Overview
 
-In this project I'm examining bus access in Montgomery County to see what it looks like in numbers and where there may be areas that would benefit from improvement. This is achieved through analysis with Ride On and Metrobus GTFS and shapes, supplemeneted by property data and data from the American Community Survey about vehicles per household and population. In my analysis I examine correlation between vehicles-per-household data and bus access.
+In this project I'm examining bus access in Montgomery County to see what it looks like in numbers and where there may be areas that would benefit from improvement. This is achieved through analysis with Ride On and Metrobus GTFS and shapes, supplemeneted by property data and data from the American Community Survey about vehicles per household and population. In my analysis I examine correlation between vehicles-per-household data and bus access in census tracts and cities/communities.
 
 ### Tools Used
 
