@@ -1,0 +1,74 @@
+---
+title: "3.0-statistics-numbers"
+author: "Julian Beckert"
+format:
+  html:
+    code-overflow: wrap
+    warning: false
+    message: false
+editor: visual
+---
+
+## Libraries & datasets
+
+```{r}
+library(tidyverse)
+bus_data <- read_csv("final_bus_access_dataset_simple.csv")
+city_tract_size <- read_csv("censusandcitysize.csv")
+all_calendar_trips <- read_csv("mocobuses_all_trips_calendar_schedule.csv") 
+bus_tracts_summary <- read_csv("bus_tracts_acs_summary.csv")
+```
+
+## Statistics: Percentages and totals
+
+```{r}
+totaldwellings <- sum(bus_data$totalDwellings)
+totalhouseholds_est <- sum(bus_data$estHouseholds)
+totalpopulationest <- sum(bus_data$estPopulation)
+
+# I tried getting this with base R, but decided tidyverse would be simpler:
+mostUsedBus_tibble <- bus_tracts_summary %>% 
+  mutate(most_route = 
+           wkdayRiders+satRiders+sunRiders
+         ) %>% 
+  filter(squareMilesOfTracts > 3) %>%  # this filters out a lot of Metrobus routes that barely enter Montgomery County at all
+  arrange(desc(most_route))
+mostUsedBus <- as.character(mostUsedBus_tibble$route_name[which.max(mostUsedBus_tibble$most_route)])
+
+mostUsedRideOnBus_tibble <- bus_tracts_summary %>% 
+    mutate(most_route = 
+           wkdayRiders+satRiders+sunRiders
+         ) %>% 
+  filter(agency == "MC RideOn") %>%
+  arrange(desc(most_route))
+mostUsedRideOnBus <- as.character(mostUsedRideOnBus_tibble$route_name[which.max(mostUsedRideOnBus_tibble$most_route)])
+
+  
+
+cat(paste0(
+  "Most census tracts have about ", median(bus_data$totalRoutes), " bus routes crossing through them.\n",
+  "Most buses pass through about ", median(bus_tracts_summary$tracts), " census tracts.\n",
+  "The most used bus week-round in Montgomery County is ", mostUsedBus, " with ", mostUsedBus_tibble$wkdayDepartures[mostUsedBus_tibble$route_name == mostUsedBus], " departures and an average of ", mostUsedBus_tibble$wkdayRiders[mostUsedBus_tibble$route_name == mostUsedBus], " riders per weekday in February 2026.\n",
+  "The most used RideOn bus week-round in Montgomery County is ", mostUsedRideOnBus, " with ", mostUsedRideOnBus_tibble$wkdayDepartures[mostUsedRideOnBus_tibble$route_name == mostUsedRideOnBus], " departures and an average of ", mostUsedRideOnBus_tibble$wkdayRiders[mostUsedRideOnBus_tibble$route_name == mostUsedRideOnBus], " riders per weekday in February 2026.\n",
+  
+  "According to estimates by the American Community Survey,\n", 
+  "  • ", round(sum(bus_data$estHouseholds_MorePeopleThanVehicles)/totalhouseholds_est,4)*100, "% of households in Montgomery County have more people than vehicles.\n",
+  "  • ", round(sum(bus_data$estHouseholds_1Vehicle_2PlusPeople)/totalhouseholds_est,4)*100, "% of households have one vehicle and more than two people.\n",
+  "  • ", round(sum(bus_data$estHouseholds_LessVehiclesThanWorkers)/totalhouseholds_est,4)*100, "% of households have less vehicles than workers.\n",
+  "  • ", round(sum(bus_data$estHouseholds_0Vehicle)/totalhouseholds_est,4)*100, "% of households have 0 vehicles altogether.\n",
+  
+  "Approximately ", round(sum(bus_data$SquareMiles_halfmile_fromstop)/sum(bus_data$SquareMile),4)*100, "% of the square miles of land in Montgomery County is within 1/2 mile of a bus stop.\n",
+  "Approximately ", round(sum(bus_data$SquareMiles_fourthmile_fromstop)/sum(bus_data$SquareMile),4)*100, "% is in 1/4 mile of a bus stop.\n",
+
+  
+  "When defining 'home' as every single-family residential building and every individual unit in a multi-family residential building,\n",
+  "  • ", round(sum(bus_data$quarterm_stop_totalDwellings)/totaldwellings,4)*100, "% of homes are within 1/4 mile of a bus stop.\n",
+  "  • ", round(sum(bus_data$halfm_stop_totalDwellings)/totaldwellings,4)*100, "% of homes are within 1/2 mile of a bus stop.\n",
+
+  "\nIt is important to note that being in walking distance of a bus stop is not the same thing as having reliable bus service.\n",
+  "  • Approximately ", round(sum(bus_data$estHouseholds[bus_data$is_sunday == 0])/sum(bus_data$estHouseholds),4)*100, "% of households are in a census tract that has no Sunday service, accounting for approximately ", round(sum(bus_data$estPopulation[bus_data$is_sunday == 0])/sum(bus_data$estPopulation),4)*100, "% of Montgomery County's population.\n",
+  "  • The total departures per day drops ", 100-(round(sum(all_calendar_trips$sat_departures)/sum(all_calendar_trips$wkday_departures),4)*100), "% from weekdays to Saturdays, going from ", sum(all_calendar_trips$wkday_departures), " to ", sum(all_calendar_trips$sat_departures),  " trips.\n",
+  "  • The total departures per day drops ", 100-(round(sum(all_calendar_trips$sun_departures)/sum(all_calendar_trips$wkday_departures),4)*100), "% from weekdays to Sundays, going from ", sum(all_calendar_trips$wkday_departures), " to ", sum(all_calendar_trips$sun_departures),  " trips.\n",
+  "  • On Saturdays, most census tracts have around ", median(bus_data$totalSatDepartures), " departures, and ", sum(bus_data$totalSatDepartures < 100), " census tracts have less than 100 departures per day on Saturday, accounting for about ", round(sum(bus_data$estPopulation[bus_data$totalSatDepartures < 100])/totalpopulationest, 4)*100, "% of the population."
+))
+```
