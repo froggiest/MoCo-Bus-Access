@@ -60,12 +60,10 @@ namecheck <- tibble(col = names(bus_data_prediction))
 cat(paste0(names(bus_data_prediction)[c(5:6, 31:52, 65, 81:85, 87, 89:95)], collapse = "', '"))
 
 # entering into a variable to open in R Studio. more efficient than looking at output
-correlations <- cor(bus_data_prediction[, c('propEstHouseholds_LessVehiclesThanWorkers', 'prop_land_fourthmile_stop', 'prop_land_halfmile_stop', 'propBuilding_quarterm_stop', 'propDwell_quarterm_stop', 'propBuilding_halfm_stop', 'propDwell_halfm_stop', 'propBuilding_quarterm_ROUTE', 'propDwell_quarterm_ROUTE', 'propBuilding_halfm_ROUTE', 'propDwell_halfm_ROUTE', 'propBuilding_nobus_stop', 'propDwell_nobus_stop', 'propBuilding_nobus_ROUTE', 'propDwell_nobus_ROUTE', 'propBuilding_halfm_ROUTE_no_stop', 'propDwell_halfm_ROUTE_no_stop', 'propBuilding_quarterm_ROUTE_no_stop', 'propDwell_quarterm_ROUTE_no_stop', 'propBuilding_quarterm_ROUTE_no_stop_at_ALL', 'propDwell_quarterm_ROUTE_no_stop_at_ALL', 'propBuilding_halfm_BRT_stop', 'propDwell_halfm_BRT_stop', 'propBuilding_quarterm_BRT_stop', 'propDwell_quarterm_BRT_stop', 'is_sunday', 'propEstHouseholds_0Vehicle', 'propEstHouseholds_MorePeopleThanVehicles', 'propEstPopChildren14Under', 'propEstPopElderly65Over', 'has_brt_stop', 'routes_per_square_mile', 'wkday_departures_per_person', 'wkday_departures_per_route', 'bus_routes_per_dwelling', 'mean_departures_per_stop', 'mean_routes_per_stop', 'reduction_to_saturday')], use = "complete.obs")
+correlations <- cor(bus_data_prediction[, c('propEstHouseholds_LessVehiclesThanWorkers', 'prop_land_fourthmile_stop', 'prop_land_halfmile_stop', 'propBuilding_quarterm_stop', 'propDwell_quarterm_stop', 'propBuilding_halfm_stop', 'propDwell_halfm_stop', 'propBuilding_quarterm_ROUTE', 'propDwell_quarterm_ROUTE', 'propBuilding_halfm_ROUTE', 'propDwell_halfm_ROUTE', 'propBuilding_nobus_stop', 'propDwell_nobus_stop', 'propBuilding_nobus_ROUTE', 'propDwell_nobus_ROUTE', 'propBuilding_halfm_ROUTE_no_stop', 'propDwell_halfm_ROUTE_no_stop', 'propBuilding_quarterm_ROUTE_no_stop', 'propDwell_quarterm_ROUTE_no_stop', 'propBuilding_quarterm_ROUTE_no_stop_at_ALL', 'propDwell_quarterm_ROUTE_no_stop_at_ALL', 'is_sunday', 'propEstHouseholds_0Vehicle', 'propEstHouseholds_MorePeopleThanVehicles', 'propEstPopChildren14Under', 'propEstPopElderly65Over', 'routes_per_square_mile', 'wkday_departures_per_person', 'wkday_departures_per_route', 'bus_routes_per_dwelling', 'mean_departures_per_stop', 'mean_routes_per_stop', 'reduction_to_saturday')], use = "complete.obs")
 ```
 
-The variables with the highest correlation to proportion of households with less vehicles than workers are `routes_per_square_mile`, `prop_land_fourthmile_stop`, and `propDwell_quarterm_BRT_stop`.
-
-The variable `propDwell_quarterm_BRT_stop` refers to planned bus stops instead of existing ones, so I will be leaving this variable out, and instead using `propDwell_quarterm_stop`, the next most correlated variable that doesn't refer to planned stops.
+The variables with the highest correlation to proportion of households with less vehicles than workers are `routes_per_square_mile`, `prop_land_fourthmile_stop`, and `propDwell_quarterm_stop`.
 
 ### Check for collinearity
 
@@ -144,9 +142,7 @@ city_grouping_summary <- grouped_cities %>%
     quarterm_ROUTE_totalBuildings = sum(quarterm_ROUTE_totalBuildings),
     nobus_stop_totalDwellings = sum(nobus_stop_totalDwellings), 
     nobus_stop_totalBuildings = sum(nobus_stop_totalBuildings), 
-    halfm_stop_BRT_totalDwellings = sum(halfm_stop_BRT_totalDwellings),
-    quarterm_stop_BRT_totalDwellings = sum(quarterm_stop_BRT_totalDwellings), 
-    
+
     is_sunday = ifelse(sum(is_sunday) == 0, 0, 1),
     is_sat_not_sun = ifelse(sum(is_sat_not_sun) == 0, 0, 1), 
     
@@ -166,9 +162,7 @@ city_grouping_summary <- grouped_cities %>%
     propEstHouseholds_0Vehicle = estHouseholds_0Vehicle/estHouseholds,
     propEstHouseholds_MorePeopleThanVehicles = estHouseholds_MorePeopleThanVehicles/estHouseholds,
     propEstHouseholds_LessVehiclesThanWorkers = estHouseholds_LessVehiclesThanWorkers/estHouseholds,
-    propLandFourthMilesStop = totalSquareMilesFourthMileFromStop/totalSquareMiles,
-    
-    has_brt_stop = ifelse(sum(has_brt_stop) == 0, 0, 1)
+    propLandFourthMilesStop = totalSquareMilesFourthMileFromStop/totalSquareMiles
   ) 
 
 # total routes can't be added by counting the sum of the routes in census tracts, because those numbers are based on the total distinct routes passing through each tract. the number would be very inflated by duplicates. instead, group and join from the city bus summary data, which is based on the same principle of joining tracts to cities, but lists all the individual route names:
@@ -226,7 +220,7 @@ namecheck <- tibble(col = names(city_bus_grouping))
 # pasting the specific names of the columns in case the columns are ever adjusted 
 cat(paste0(names(city_bus_grouping)[c(23, 30:40, 48:54)], collapse = "', '"))
 
-correlations <- cor(city_bus_grouping[, c('propEstHouseholds_LessVehiclesThanWorkers', 'is_sunday', 'propBuilding_quarterm_stop', 'propDwell_quarterm_stop', 'propBuilding_halfm_stop', 'propDwell_halfm_stop', 'propBuilding_nobus_stop', 'propDwell_nobus_stop', 'propEstHouseholds_0Vehicle', 'propEstHouseholds_MorePeopleThanVehicles', 'propLandFourthMilesStop', 'has_brt_stop', 'routes_per_square_mile', 'wkday_departures_per_route', 'wkday_departures_per_person', 'bus_routes_per_dwelling', 'mean_departures_per_stop', 'mean_routes_per_stop', 'reduction_to_saturday')], use = "complete.obs")
+correlations <- cor(city_bus_grouping[, c('propEstHouseholds_LessVehiclesThanWorkers', 'is_sunday', 'propBuilding_quarterm_stop', 'propDwell_quarterm_stop', 'propBuilding_halfm_stop', 'propDwell_halfm_stop', 'propBuilding_nobus_stop', 'propDwell_nobus_stop', 'propEstHouseholds_0Vehicle', 'propEstHouseholds_MorePeopleThanVehicles', 'propLandFourthMilesStop', 'routes_per_square_mile', 'wkday_departures_per_route', 'wkday_departures_per_person', 'bus_routes_per_dwelling', 'mean_departures_per_stop', 'mean_routes_per_stop', 'reduction_to_saturday')], use = "complete.obs")
 ```
 
 The bus-related variables that have the strongest correlations with the dependent variable are `routes_per_square_mile`, `propLandFourthMilesStop`, `wkday_departures_per_person`, `propBuilding_quarterm_stop`, `propDwell_quarterm_stop`, `wkday_departures_per_route`, `propBuilding_halfm_stop`.
@@ -302,5 +296,3 @@ print(high_residual_cities$City)
 ```
 
 According to my model, Woodbine, Hillandale, Silver Spring, Redland, Brighton, Northwest Park / Oakview, Long Branch, Gaithersburg, Boyds, Germantown, Bethesda, Brookeville, Spencerville, Upper Rock Creek, and Burtonsville have higher proportions of households with less vehicles than workers than my model predicted based on bus access variables. They have a high proportion of workers who don't have their own vehicle despite having a relatively lower number of bus stops per square mile, weekday bus trips per person, and weekday bus trips per route. Improving these features in those cities would help make commuting more accessible for residents, and it may also contribute to a further increase in the amount of workers not owning vehicles.
-
-
