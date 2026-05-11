@@ -11,13 +11,13 @@ editor: visual
 library(tidyverse)
 
 # All datasets created/adjusted with ArcGIS
-# BRT routes/stops intersecting with census tracts
-brt_routes_tracts <- read_csv("BRT_routes_censustracts.csv")
+# BRT stops intersecting with census tracts
+
 brt_stops_tracts <- read_csv("BRT_stops_all_with_census_tracts.csv")
 
-# Residential buildings 1/2 and 1/4 mile from a BRT line
-homes_halfmile_brt_route <- read_csv("halfmile_BRT_ROUTE_homes.csv")
-homes_quartermile_brt_route <- read_csv("quartermile_BRT_ROUTE_homes.csv")
+# Residential buildings 1/2 and 1/4 mile from a BRT stop
+homes_halfmile_brt_stop <- read_csv("halfmile_from_proposed_brt_stop.csv")
+homes_quartermile_brt_stop <- read_csv("quartermile_from_proposed_brt_stop.csv")
 
 # Join to the residential buildings dataset including distances to existing bus routes/stops
 residentialhomes_existingbus <- read_csv("residentialbuildings_distances_census.csv")
@@ -27,34 +27,36 @@ residentialhomes_existingbus <- read_csv("residentialbuildings_distances_census.
 
 ```{r}
 # clean first
-homes_halfmile_brt_route <- homes_halfmile_brt_route %>% 
+clean_homes_halfmile_brt_stop <- homes_halfmile_brt_stop %>% 
   select(-CONDO_UNIT, -CLERK_PLAT, -PARCEL_NO) %>% 
   distinct(ACCT, .keep_all = TRUE)
-homes_quartermile_brt_route <- homes_quartermile_brt_route %>% 
+clean_homes_quartermile_brt_stop <- homes_quartermile_brt_stop %>% 
   select(-CONDO_UNIT, -CLERK_PLAT, -PARCEL_NO) %>% 
   distinct(ACCT, .keep_all = TRUE)
 # residentialhomes_existingbus is already clean
 
 # add distance binary columns
-homes_halfmile_brt_route <- homes_halfmile_brt_route %>% 
+clean_homes_halfmile_brt_stop <- clean_homes_halfmile_brt_stop %>% 
   mutate(
-    halfmile_BRT_route = 1
+    halfmile_BRT_stop = 1
   )
-homes_quartermile_brt_route <- homes_quartermile_brt_route %>% 
+clean_homes_quartermile_brt_stop <- clean_homes_quartermile_brt_stop %>% 
   mutate(
-    quartermile_BRT_route = 1
+    quartermile_BRT_stop = 1
   )
 
 # start joining
 residential_BRT_half <- left_join(residentialhomes_existingbus, 
-                         homes_halfmile_brt_route %>% select(ACCT, halfmile_BRT_route))
+                         clean_homes_halfmile_brt_stop %>% 
+                           select(ACCT, halfmile_BRT_stop))
 # replace new NAs created by the join with 0
-residential_BRT_half$halfmile_BRT_route[is.na(residential_BRT_half$halfmile_BRT_route)] <- 0
+residential_BRT_half$halfmile_BRT_stop[is.na(residential_BRT_half$halfmile_BRT_stop)] <- 0
 # next join
 residential_BRT <- left_join(residential_BRT_half, 
-                             homes_quartermile_brt_route %>% select(ACCT, quartermile_BRT_route))
+                             clean_homes_quartermile_brt_stop %>% 
+                               select(ACCT, quartermile_BRT_stop))
 # replace new NAs created by the join with 0
-residential_BRT$quartermile_BRT_route[is.na(residential_BRT$quartermile_BRT_route)] <- 0
+residential_BRT$quartermile_BRT_stop[is.na(residential_BRT$quartermile_BRT_stop)] <- 0
 
 # download
 # write_csv(residential_BRT, "residentialbuilidings_BRT_distance_census_tracts.csv")
@@ -65,35 +67,17 @@ residential_BRT$quartermile_BRT_route[is.na(residential_BRT$quartermile_BRT_rout
 routes and tracts & stops and tracts
 
 ```{r}
-clean_brt_routes <- brt_routes_tracts %>% 
-  # remove uneeded columns
-  select(-Join_Count, -TARGET_FID, -JOIN_FID, -OBJECTID, -STATEFP, -COUNTYFP, -GEOID, -NAME, -NAMELSAD, -MTFCC, -FUNCSTAT, -NAMELSAD, -ALAND, -Field, -AWATER, -INTPTLAT, -INTPTLON, -Shape_Length)
-
 clean_brt_stops_tracts <- brt_stops_tracts %>% 
+  filter(STATUS == "Planned") %>% 
     select(-Join_Count, -TARGET_FID, -JOIN_FID, -ID, -NAME, -STATEFP, -COUNTYFP, -GEOID, -NAMELSAD, -MTFCC, -FUNCSTAT, -ALAND, -AWATER) %>% 
   rename_at("INTPTLAT",~"STOPLAT") %>% 
   rename_at("INTPTLON",~"STOPLON")
-
-distinct_brt_routes_tracts <- clean_brt_routes %>%
-  rename_at("GEOIDFQ", ~ "Geography") %>%
-  distinct(
-    Geography, RouteNum, 
-    .keep_all = TRUE)
 
 distinct_brt_stops_tracts <- clean_brt_stops_tracts %>% 
   rename_at("GEOIDFQ", ~ "Geography") %>%
   distinct(
     Geography, STATION_NA, 
     .keep_all = TRUE)
-
-number_of_brt_routes <- distinct_brt_routes_tracts %>% 
-  group_by(Geography) %>% 
-  summarise(
-    brt_routes = n_distinct(RouteNum)
-  ) %>% 
-  mutate(
-    has_brt_route = 1
-  )
 
 number_of_brt_stops <- distinct_brt_stops_tracts %>% 
   group_by(Geography) %>% 
@@ -104,18 +88,5 @@ number_of_brt_stops <- distinct_brt_stops_tracts %>%
     has_brt_stop = 1
   )
 
-
-distinct_brt_stops_vs_routes <- left_join(distinct_brt_routes_tracts, distinct_brt_stops_tracts)
-
-brt_stop_route_statistics <- left_join(number_of_brt_routes, number_of_brt_stops)
-brt_stop_route_statistics <- brt_stop_route_statistics %>% 
-  relocate(brt_stops, .after = brt_routes)
-sum(is.na(brt_stop_route_statistics$brt_routes))
-sum(is.na(brt_stop_route_statistics$has_brt_route))
-brt_stop_route_statistics$brt_stops[is.na(brt_stop_route_statistics$brt_stops)] <- 0
-brt_stop_route_statistics$has_brt_stop[is.na(brt_stop_route_statistics$has_brt_stop)] <- 0
-
-
-# write_csv(distinct_brt_stops_vs_routes, "distinct_brt_stops_vs_routes.csv")
-# write_csv(brt_stop_route_statistics, "brt_stop_route_statistics.csv")
+# write_csv(number_of_brt_stops, "brt_stop_statistics.csv")
 ```
