@@ -5,8 +5,8 @@ A lot of this project involves cleaning and formatting data and creating summari
 ## Cleaning and variable creation in ArcGIS
 
 **1. Census tracts**\
-I used TIGER/Line Shapefiles from 2024 census tracts in Maryland. I selected only those in Montgomery County.\
-- Calculated size of each tract in US survey miles\^2\
+I used TIGER/Line Shapefiles from 2024 census tracts in Maryland. I selected only those in Montgomery County.
+- Calculated size of each tract in US survey miles\^2
 
 **2. Bus routes and stops**\
 I used the Ride On GTFS files with the GTFS Shapes to Features geoprocessing tool to map bus lines; GTFS Stops to Features to map bus stops\
