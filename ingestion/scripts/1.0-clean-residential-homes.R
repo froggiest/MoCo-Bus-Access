@@ -6,8 +6,8 @@ residentialhomes_censustracts <- read_csv("homes_with_tracts.csv")
 residential_halfmile_route <- read_csv("halfmile_from_bus_route.csv") # half mile from a bus route
 residential_quartermile_route <- read_csv("quartermile_from_bus_route.csv") # quarte rmile from a bus route
 # Residential buildings: Bus stops (RideOn + Metrobus)
-residential_quartermile_stop <- read_csv("quartermile_from_bus_stop.csv") # half mile from a bus stop
 residential_halfmile_stop <- read_csv("halfmile_from_bus_stop.csv") # quarter mile from a bus stop
+residential_quartermile_stop <- read_csv("quartermile_from_bus_stop.csv") # half mile from a bus stop
 
 # remove columns that cause "problems"
 residentialhomes_censustracts <- residentialhomes_censustracts %>% select(-CLERK_PLAT)
