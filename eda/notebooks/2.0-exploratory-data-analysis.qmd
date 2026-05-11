@@ -1,0 +1,477 @@
+---
+title: "2.0-exploratory-data-analysis"
+author: "Julian Beckert"
+format:
+  html:
+    warning: false
+    message: false
+editor: visual
+---
+
+## Library & datasets
+
+```{r}
+library(tidyverse)
+library(ggridges)
+
+bus_data <- read_csv("final_bus_access_dataset_simple.csv")
+acs <- read_csv("all_american_community_survey.csv")
+```
+
+## Census tracts + American Community Survey
+
+**Size**
+
+```{r}
+cat(paste0("Census tracts in Montgomery County: ", length(unique(acs$Geography)),
+           "\nAverage size of census tracts in Montgomery County: ", round(mean(bus_data$SquareMile),3), " square miles\n",
+           "Median size of census tracts in Montgomery County: ", round(median(bus_data$SquareMile),3),  " square miles\n"))
+
+
+bus_data %>% 
+  ggplot() +
+  geom_boxplot(aes(x = SquareMile), fill = "#FF93C4") +
+  labs(title = "Size of census tracts in square miles",
+       subtitle = "US survey miles, calculated with ArcGIS") +
+  theme_light()
+
+bus_data %>% 
+  filter(SquareMile < 20) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = SquareMile), fill = "#FF93C4") +
+  labs(title = "Size of census tracts in square miles (<20)",
+       subtitle = "US survey miles, calculated with ArcGIS") +
+  theme_light()
+
+bus_data %>% 
+  filter(SquareMile < 5) %>% 
+  ggplot() +
+  geom_boxplot(aes(x = SquareMile), fill = "#FF93C4") +
+  labs(title = "Size of census tracts in square miles (<5)",
+       subtitle = "US survey miles, calculated with ArcGIS") +
+  theme_light()
+
+bus_data %>% 
+  filter(SquareMile < 5) %>% 
+  ggplot() +
+  geom_density(aes(x = SquareMile), fill = "#FF93C4") +
+  labs(title = "Size of census tracts in square miles (<5)",
+       subtitle = "US survey miles, calculated with ArcGIS") +
+  theme_light()
+
+bus_data %>% 
+  filter(SquareMile < 2) %>% 
+  ggplot() +
+  geom_density(aes(x = SquareMile), fill = "#FF93C4") +
+  labs(title = "Size of census tracts in square miles (<2)",
+       subtitle = "US survey miles, calculated with ArcGIS") +
+  theme_light()
+
+
+bus_data %>% 
+  ggplot() +
+  geom_point(aes(x = estPopulation, y = SquareMile)) +
+  geom_smooth(aes(x = estPopulation, y = SquareMile), se = F, color = "#F8509C") +
+  labs(title = "Square miles vs total population per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$estPopulation, bus_data$SquareMile))) +
+  theme_light()
+
+bus_data %>% 
+  filter(SquareMile < 2) %>% 
+  ggplot() +
+  geom_point(aes(x = estPopulation, y = SquareMile)) +
+  geom_smooth(aes(x = estPopulation, y = SquareMile), se = F, color = "#F8509C") +
+  labs(title = "Square miles (<2) vs total population per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$estPopulation, bus_data$SquareMile))) +
+  theme_light()
+```
+
+**Population**
+
+```{r}
+cat(paste0("Average population of census tracts in Montgomery County: ", round(mean(bus_data$estPopulation),3),
+           "\nMedian population of census tracts in Montgomery County: ", round(median(bus_data$estPopulation),3)))
+
+
+bus_data %>% 
+  ggplot() +
+  geom_boxplot(aes(x = estPopulation), fill = "#A84471") +
+  labs(title = "Population of census tracts",
+       subtitle = "Census 2024 5-year estimates") +
+  theme_light()
+
+bus_data %>% 
+  ggplot() +
+  geom_density(aes(x = estPopulation), fill = "#A84471") +
+  labs(title = "Population of census tracts",
+       subtitle = "Census 2024 5-year estimates") +
+  theme_light()
+
+```
+## Land
+
+```{r}
+bus_data %>% 
+  ggplot() +
+  geom_boxplot(aes(x = prop_land_fourthmile_stop))
+
+bus_data %>% 
+  ggplot() +
+  geom_density(aes(x = prop_land_fourthmile_stop))
+```
+
+
+**Households, residential buildings, and dwellings**
+
+```{r}
+cat(paste0("There are ", sum(bus_data$totalBuildings), " residential buildings in Montgomery County and ", sum(bus_data$totalDwellings), " dwellings (single family homes & single family units units).\n",
+           "According to the census, there are ", sum(bus_data$estHouseholds), " households in Montgomery County.\n",
+           "Residential buildings divided by households: ", sum(bus_data$totalBuildings), "/", sum(bus_data$estHouseholds), " = ", round(sum(bus_data$totalBuildings)/sum(bus_data$estHouseholds),3),
+           "\nDwellings divided by households: ", sum(bus_data$totalDwellings), "/", sum(bus_data$estHouseholds), " = ", round(sum(bus_data$totalDwellings)/sum(bus_data$estHouseholds),3),
+           "\nAverage households per census tract in Montgomery County: ", round(mean(bus_data$estHouseholds),3),
+           "\nMedian households per census tracts in Montgomery County: ", round(median(bus_data$estHouseholds),3), 
+           "\nAverage dwellings per census tract in Montgomery County: ", round(mean(bus_data$totalDwellings),3),
+           "\nMedian dwellings per census tract in Montgomery County: ", round(median(bus_data$totalDwellings),3),
+           "\nAverage residential buildings per census tract in Montgomery County: ", round(mean(bus_data$totalBuildings),3),
+           "\nMedian residential buildings per census tracts in Montgomery County: ", round(median(bus_data$totalBuildings),3)
+))
+
+
+bus_data %>% 
+  ggplot() +
+  geom_point(aes(x = totalBuildings, y = estHouseholds)) +
+  geom_smooth(aes(x = totalBuildings, y = estHouseholds), se = F, color = "#F8509C") +
+  labs(title = "Estimated households vs total residential buildings per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$totalBuildings, bus_data$estHouseholds))) +
+  theme_light()
+
+
+bus_data %>% 
+  ggplot() +
+  geom_point(aes(x = totalDwellings, y = estHouseholds)) +
+  geom_smooth(aes(x = totalDwellings, y = estHouseholds), se = F, color = "#F8509C") +
+  labs(title = "Estimated households vs total dwellings per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$totalDwellings, bus_data$estHouseholds))) +
+  theme_light()
+
+bus_data %>% 
+  ggplot() +
+  geom_point(aes(x = totalBuildings, y = estPopulation)) +
+  geom_smooth(aes(x = totalBuildings, y = estPopulation), se = F, color = "#F8509C") +
+  labs(title = "Estimated population vs total residential buildings per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$totalBuildings, bus_data$estPopulation))) +
+  theme_light()
+
+bus_data %>% 
+  ggplot() +
+  geom_point(aes(x = totalDwellings, y = estPopulation)) +
+  geom_smooth(aes(x = totalDwellings, y = estPopulation), se = F, color = "#F8509C") +
+  labs(title = "Estimated population vs total dwellings per census tract",
+       subtitle = paste0("Correlation coefficient: ", cor(bus_data$totalDwellings, bus_data$estPopulation))) +
+  theme_light()
+```
+
+## Bus service
+
+This plot represents the total trips per weekday of bus routes that intersect with census tracts. It's the distribution of the total number of buses passing through each census tract on a weekday bus schedule.
+
+```{r}
+bus_data %>%
+  ggplot() +
+  geom_density(aes(x = totalWkdayDepartures), fill = "#E6B0CD", color = "#F8509C", linewidth = 0.5, alpha = 0.8) +
+  labs(
+    title = "Distribution of total bus trips per weekday, across census tracts",
+    subtitle = "Total buses passing through each census tract on a weekday schedule",
+    caption = "Data from Ride On GTFS, City of Washington, DC, and WMATA GTFS. Joined to tracts in ArcGIS.",
+    x = "Number of weekday trips"
+  ) +
+  scale_x_continuous(breaks = seq(0, 3000, by = 500)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+```
+
+```{r}
+weekdays_label <- bus_data %>% 
+  rename_at("totalWkdayDepartures",~"Weekdays") %>% 
+  rename_at("totalSatDepartures",~"Saturdays") %>% 
+  rename_at("totalSunDepartures",~"Sundays") %>% 
+  pivot_longer(
+    cols = c("Weekdays", "Saturdays", "Sundays"),
+    names_to = "schedule",
+    values_to = "trips"
+  )
+
+weekdays_label %>% 
+  ggplot() +
+  geom_density_ridges(aes(x = trips, 
+                          y = schedule,
+                          color = schedule, fill = schedule), alpha = 0.85) + 
+  labs(
+    title = "Distribution of total bus trips per day of week, across census tracts",
+    subtitle = "Total buses passing through each census tract on different day schedules",
+    caption = "Data from Ride On GTFS and WMATA GTFS. Joined to tracts in ArcGIS.",
+    x = "Number of trips"
+  ) +
+    scale_color_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "color", guide = "none") +
+  scale_fill_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "fill", guide = "none")+
+  scale_alpha(guide = "none") +
+  scale_x_continuous(breaks = seq(0, 3000, by = 500)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+
+weekdays_label %>% 
+  filter(trips < 1500) %>% 
+  ggplot() +
+  geom_density_ridges(aes(x = trips, 
+                          y = schedule,
+                          color = schedule, fill = schedule), alpha = 0.85) + 
+  labs(
+    title = "Distribution of total bus trips (< 1500) per day of week, across census tracts",
+    subtitle = "Total buses passing through each census tract on different day schedules",
+    caption = "Data from Ride On GTFS and WMATA GTFS. Joined to tracts in ArcGIS.",
+    x = "Number of trips"
+  ) +
+    scale_color_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "color", guide = "none") +
+  scale_fill_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "fill", guide = "none")+
+  scale_alpha(guide = "none") +
+  scale_x_continuous(breaks = seq(0, 3000, by = 250)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+```
+
+
+## Distance to bus
+
+**Distance from each dwelling to the nearest bus stop (large amount of tracts)**
+
+```{r}
+bus_data %>% 
+  filter(estPopulation > 5000) %>% 
+  ggplot() +
+    geom_bar(aes(x = totalDwellings, y = reorder(Geography, estPopulation), fill = "More than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = halfm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/2 mile away"), stat = "identity") +
+  geom_bar(aes(x = quarterm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/4 mile away"), stat = "identity") +
+  
+  scale_fill_manual(values = c(
+    "More than 1/2 mile" = "#141414",
+    "≤ 1/2 mile away" = "#91375F",
+    "≤ 1/4 mile away" = "#F8509C"
+  ),
+  breaks = c(
+    "≤ 1/4 mile away", "≤ 1/2 mile away", "More than 1/2 mile")
+  )+
+  
+  labs(
+    title = "Census tracts: distance from each home to nearest bus route",
+    subtitle = "Distance from each home to the closest bus stop",
+    fill = "Nearest bus is:",
+    y = "Census tract",
+    x = "Total homes & apartment units",
+    caption = "Data from Montgomery County Planning Department, U.S. Census Bureau, Ride On GTFS, & City of Washington, DC"
+  ) +
+  theme_light() +
+  theme(
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    legend.position = c(.85, .6, .2, 1),
+    axis.ticks = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.title = element_text(color = "#fff"),
+    axis.title = element_text(color = "#fff"),
+    plot.subtitle = element_text(color = "#E7CEE0"),
+    plot.caption = element_text(color = "#E7CEE0")
+  )
+```
+
+**Highest population selection**
+
+```{r}
+bus_data %>% 
+  filter(estPopulation > quantile(bus_data$estPopulation, probs = 0.9)) %>% # tracts above the 90th percentile for population
+  ggplot() +
+  geom_bar(aes(x = totalDwellings, y = reorder(Geography, estPopulation), fill = "More than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = halfm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/2 mile away"), stat = "identity") +
+  geom_bar(aes(x = quarterm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/4 mile away"), stat = "identity") +
+  
+  
+  geom_text(aes(label = totalRoutes, x = totalDwellings+80, y = reorder(Geography, totalDwellings), fontface = "bold"), color = "#000") +
+  geom_text(aes(label = "Total bus routes in this census tract:"), x = 1700, y = 20, size = 3, fontface = "bold", color = "#000") +
+
+  scale_fill_manual(values = c(
+    "More than 1/2 mile" = "#141414",
+    "≤ 1/2 mile away" = "#91375F",
+    "≤ 1/4 mile away" = "#F8509C"
+  ),
+  breaks = c(
+    "≤ 1/4 mile away", "≤ 1/2 mile away", "More than 1/2 mile")
+  )+
+  
+  labs(
+    title = "Most populous census tracts: distance from each home to the nearest bus stop",
+    subtitle = "Census tracts above the 90th percentile for population",
+    fill = "Nearest bus stop is:",
+    y = "Census tract",
+    x = "Total homes & apartment units",
+    caption = "Data from Montgomery County Planning Department, U.S. Census Bureau, Ride On GTFS, & City of Washington, DC"
+  ) +
+  theme_light() +
+  theme(
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.text.y = element_blank(),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.title = element_text(color = "#fff"),
+    axis.title = element_text(color = "#fff"), 
+    plot.subtitle = element_text(color = "#E7CEE0"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = -.5)
+  )
+```
+
+**Lowest population selection**
+
+```{r}
+bus_data %>% 
+  filter(estPopulation < quantile(bus_data$estPopulation, probs = 0.1)) %>% # tracts under the 10th percentile for population
+  ggplot() +
+  geom_bar(aes(x = totalDwellings, y = reorder(Geography, estPopulation), fill = "More than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = halfm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/2 mile away"), stat = "identity") +
+  geom_bar(aes(x = quarterm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "≤ 1/4 mile away"), stat = "identity") +
+  
+  
+  geom_text(aes(label = totalRoutes, x = totalDwellings+80, y = reorder(Geography, totalDwellings), fontface = "bold"), color = "#000") +
+  geom_text(aes(label = "Total bus routes in this census tract:"), x = 850, y = 15, size = 3, fontface = "bold", color = "#000") +
+
+  scale_fill_manual(values = c(
+    "More than 1/2 mile" = "#141414",
+    "≤ 1/2 mile away" = "#91375F",
+    "≤ 1/4 mile away" = "#F8509C"
+  ),
+  breaks = c(
+    "≤ 1/4 mile away", "≤ 1/2 mile away", "More than 1/2 mile")
+  )+
+  
+  labs(
+    title = "Least populous census tracts: distance from each home to the nearest bus stop",
+    subtitle = "Census tracts below the 10th percentile for population",
+    fill = "Nearest bus stop is:",
+    y = "Census tract",
+    x = "Total homes & apartment units",
+    caption = "Data from Montgomery County Planning Department, U.S. Census Bureau, Ride On GTFS, & City of Washington, DC"
+  ) +
+  theme_light() +
+  theme(
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.text.y = element_blank(),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.title = element_text(color = "#fff"),
+    axis.title = element_text(color = "#fff"), 
+    plot.subtitle = element_text(color = "#E7CEE0"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = -.5)
+  )
+```
+
+**Highest proportion of households with less vehicles than workers**
+
+```{r}
+bus_data %>% 
+  filter(propEstHouseholds_LessVehiclesThanWorkers > quantile(bus_data$propEstHouseholds_LessVehiclesThanWorkers, probs = 0.9)) %>% # tracts above the 90th percentile for proportion of households with less vehicles than workers
+  ggplot() +
+  geom_bar(aes(x = totalDwellings, y = reorder(Geography, propEstHouseholds_LessVehiclesThanWorkers), fill = "More than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = halfm_stop_totalDwellings, y = reorder(Geography, propEstHouseholds_LessVehiclesThanWorkers), fill = "≤ 1/2 mile away"), stat = "identity") +
+  geom_bar(aes(x = quarterm_stop_totalDwellings, y = reorder(Geography, propEstHouseholds_LessVehiclesThanWorkers), fill = "≤ 1/4 mile away"), stat = "identity") +
+  
+  
+  geom_text(aes(label = totalRoutes, x = totalDwellings+80, y = reorder(Geography, totalDwellings), fontface = "bold"), color = "#000") +
+  geom_text(aes(label = "Total bus routes in this census tract:"), x = 1500, y = 22, size = 3, fontface = "bold", color = "#000") +
+
+  scale_fill_manual(values = c(
+    "More than 1/2 mile" = "#141414",
+    "≤ 1/2 mile away" = "#91375F",
+    "≤ 1/4 mile away" = "#F8509C"
+  ),
+  breaks = c(
+    "≤ 1/4 mile away", "≤ 1/2 mile away", "More than 1/2 mile")
+  )+
+  
+  labs(
+    title = "Census tracts with highest % of households with less vehicles than workers:\ndistance from each home to the nearest bus stop",
+    subtitle = "Census tracts above the 90th percentile for proportion with less vehicles than workers",
+    fill = "Nearest bus stop is:",
+    y = "Census tract",
+    x = "Total homes & apartment units",
+    caption = "Data from Montgomery County Planning Department, U.S. Census Bureau, Ride On GTFS, & City of Washington, DC"
+  ) +
+  theme_light() +
+  theme(
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.text.y = element_blank(),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.title = element_text(color = "#fff"),
+    axis.title = element_text(color = "#fff"), 
+    plot.subtitle = element_text(color = "#E7CEE0"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = -.5)
+  )
+```
+

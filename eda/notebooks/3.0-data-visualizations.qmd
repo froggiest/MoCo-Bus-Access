@@ -1,0 +1,404 @@
+---
+title: "3.0-data-visualizations"
+author: "Julian Beckert"
+format:
+  html:
+    warning: false
+    message: false
+editor: visual
+---
+
+## Libraries & datasets
+
+```{r}
+library(tidyverse)
+library(ggridges)
+bus_data <- read_csv("final_bus_access_dataset_simple.csv")
+moco_bus_schedule <- read_csv("mocobuses_all_trips_calendar_schedule.csv")
+```
+
+
+### Trips per census tract
+
+This plot represents the total departures per weekday of bus routes that intersect with census tracts. In other words, it is showing the distribution of the total number of buses passing through each census tract on a weekday bus schedule.
+
+```{r}
+bus_data %>%
+  ggplot() +
+  geom_density(aes(x = totalWkdayDepartures), fill = "#E6B0CD", color = "#F8509C", linewidth = 0.5, alpha = 0.8) +
+  labs(
+    title = "Distribution of total bus trips per weekday, by census tract",
+    subtitle = "Total bus trips passing through each census tract on a weekday schedule",
+    caption = "Data from Ride On GTFS, City of Washington, DC, and WMATA GTFS, joined to tracts in ArcGIS",
+    x = "Number of weekday trips"
+  ) +
+  scale_x_continuous(breaks = seq(0, 3000, by = 500)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+```
+
+```{r}
+weekdays_label <- bus_data %>% 
+  rename_at("totalWkdayDepartures",~"Weekdays") %>% 
+  rename_at("totalSatDepartures",~"Saturdays") %>% 
+  rename_at("totalSunDepartures",~"Sundays") %>% 
+  pivot_longer(
+    cols = c("Weekdays", "Saturdays", "Sundays"),
+    names_to = "schedule",
+    values_to = "trips"
+  )
+
+weekdays_label %>% 
+  ggplot() +
+  geom_density_ridges(aes(x = trips, 
+                          y = schedule,
+                          color = schedule, fill = schedule), alpha = 0.85) + 
+  labs(
+    title = "Distribution of total bus trips per day of week, per census tract",
+    subtitle = "Total bus trips passing through each census tract on different day schedules",
+    caption = "Data from Ride On GTFS and WMATA GTFS, joined to tracts in ArcGIS",
+    x = "Number of trips"
+  ) +
+    scale_color_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "color", guide = "none") +
+  scale_fill_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "fill", guide = "none")+
+  scale_alpha(guide = "none") +
+  scale_x_continuous(breaks = seq(0, 3000, by = 500)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+
+weekdays_label %>% 
+  filter(trips < 1500) %>% 
+  ggplot() +
+  geom_density_ridges(aes(x = trips, 
+                          y = schedule,
+                          color = schedule, fill = schedule), alpha = 0.85) + 
+  labs(
+    title = "Distribution of total bus trips (< 1500) per day of week, per census tract",
+    subtitle = "Total bus trips passing through each census tract on different day schedules",
+    caption = "Data from Ride On GTFS and WMATA GTFS, joined to tracts in ArcGIS",
+    x = "Number of trips"
+  ) +
+    scale_color_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "color", guide = "none") +
+  scale_fill_manual(values = c(
+    "Weekdays" = "#4B4B4D",
+    "Saturdays" = "#FF93C4",
+    "Sundays" = "#F8509C"), aesthetics = "fill", guide = "none")+
+  scale_alpha(guide = "none") +
+  scale_x_continuous(breaks = seq(0, 3000, by = 250)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+```
+
+### Trips per bus (weekday)
+
+```{r}
+moco_bus_schedule %>%
+  ggplot() +
+  geom_density(aes(x = wkday_departures), fill = "#E6B0CD", color = "#F8509C", linewidth = 0.5, alpha = 0.8) +
+  labs(
+    title = "Distribution of total bus trips per weekday, by bus",
+    subtitle = "Total departures per bus",
+    caption = "Data from Ride On GTFS and WMATA GTFS.",
+    x = "Number of weekday trips"
+  ) +
+  scale_x_continuous(breaks = seq(0, 300, by = 15)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = "bottom",
+    legend.background = element_blank(),
+    legend.title = element_blank()
+  )
+```
+
+### Riders vs trips
+
+```{r}
+moco_bus_schedule %>%
+  ggplot() +
+  geom_smooth(aes(x = wkday_departures, y = wkday_riders), alpha = 0.3, color = "#FFD5E8", se = F) +
+  geom_point(aes(x = wkday_departures, y = wkday_riders, color = agency), alpha = 0.8) +
+  labs(
+    title = "Weekday riders vs trips",
+    subtitle = paste0("Correlation coefficient: ", cor(moco_bus_schedule$wkday_departures ,moco_bus_schedule$wkday_riders)),
+    y = "Average weekday riders (Feb 2026)",
+    caption = "Data from Ride On GTFS and WMATA GTFS.",
+    x = "Number of weekday trips"
+  ) +
+  scale_color_manual(values = c("#F8509C", "#141414")) +
+  scale_x_continuous(breaks = seq(0, 300, by = 15)) +
+  theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5"),
+    legend.position = c(0.2, 0.8),
+    legend.background = element_rect(color = "#FBDDF5", alpha = 0.3),
+    legend.title = element_blank(),
+    legend.key.size = unit(0.7, "cm"),
+    legend.text = element_text(size = 9)
+  )
+```
+
+### Summary, amount of vehicles
+
+```{r}
+vehicle_summary <- tibble(
+  "All households" = sum(bus_data$estHouseholds),
+  "0 vehicles" = sum(bus_data$estHouseholds_0Vehicle),
+  "Less vehicles than workers" = sum(bus_data$estHouseholds_LessVehiclesThanWorkers),
+  "More people than vehicles" = sum(bus_data$estHouseholds_MorePeopleThanVehicles),
+  "Vehicle for each person" = sum(bus_data$estHouseholds-bus_data$estHouseholds_MorePeopleThanVehicles)
+) %>% 
+  pivot_longer(cols = 1:5, names_to = "type", values_to = "count")
+library(scales)
+vehicle_summary %>% 
+  ggplot() +
+  geom_bar(aes(x = count, y = reorder(type, -count), fill = count), stat = "identity") +
+  labs(
+    title = "Households by amount of vehicles available",
+    x = "Count",
+    caption = "Data from U.S. Census Bureau, American Community Survey 2024 5-year estimates"
+  ) +
+  scale_x_continuous(labels = comma) +
+  scale_fill_gradient(high = "#F8509C", low = "#FFC5DF", guide = "none") +
+    theme(
+    panel.grid = element_line(color = "#F8509C"),
+    panel.background = element_rect(color = "#FBE7F5", linewidth = 0.55, fill = "#fff"),
+    axis.line = element_line(color = "#141414"),
+    axis.text.y = element_text(hjust = -0.0),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_line(color = "#FBE7F5"),
+    panel.grid.major.y = element_line(color = "#FBE7F5"),
+    panel.grid.minor.x = element_line(color = "#FBDDF5"),
+    panel.grid.major.x = element_line(color = "#FBDDF5")
+  )
+```
+
+## 60 most populous census tracts
+
+Minus a huge outlying census tract in Poolseville that throws off the scale of the bar charts.
+
+### Land near bus stop
+
+```{r}
+bus_data %>% 
+  filter(Geography != "1400000US24031700500") %>%
+  arrange(desc(estPopulation)) %>% 
+  top_n(60, estPopulation) %>% 
+  ggplot() +
+  geom_bar(aes(x = SquareMile, y = reorder(Geography, estPopulation), fill = "Further than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = SquareMiles_halfmile_fromstop, y = reorder(Geography, estPopulation), fill = "Within 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = SquareMiles_fourthmile_fromstop, y = reorder(Geography, estPopulation), fill = "Within 1/4 mile of a bus stop"), stat = "identity") +
+  
+  geom_text(aes(x = 13, y = 57), label = "Germantown") +
+  geom_text(aes(x = 13, y = 41.5), label = "Travilah") +
+  
+  scale_fill_manual(values = c(
+    "Further than 1/2 mile" = "#141414",
+    "Within 1/2 mile" = "#91375F",
+    "Within 1/4 mile of a bus stop" = "#F8509C"
+  ),
+  breaks = c(
+    "Within 1/4 mile of a bus stop", "Within 1/2 mile", "Further than 1/2 mile")
+  ) +
+
+  labs(
+    title = "Square miles of land walking distance from a bus stop",
+    subtitle = "Most populous census tracts",
+    y = "Tract",
+    x = "Total square miles in census tract",
+    caption = "Data from U.S. Census Bureau, MCDOT, & WMATA",
+    fill = "Square miles of land:"
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(color = "#fff", size = 17, face = "bold"),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.subtitle = element_text(color = "#E7CEE0", size = 13, face = "bold"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = 0.5),
+    
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    
+    
+    axis.ticks = element_blank(),
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.title = element_text(color = "#fff"), 
+    axis.text.y = element_blank(),
+    
+    legend.position = c(0.86, 0.352),
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text = element_text(size = 12, face = "bold"),
+    legend.background = element_rect(fill = "transparent")
+    )
+# ggsave("land_walking_distance_populous_tracts.png", width = 10, height = 7)
+```
+
+### Homes near bus stop
+
+```{r}
+bus_data %>% 
+  filter(Geography != "1400000US24031700500") %>%
+  arrange(desc(estPopulation)) %>% 
+  top_n(60, estPopulation) %>% 
+  ggplot() +
+  geom_bar(aes(x = totalDwellings, y = reorder(Geography, estPopulation), fill = "Further than 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = halfm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "Within 1/2 mile"), stat = "identity") +
+  geom_bar(aes(x = quarterm_stop_totalDwellings, y = reorder(Geography, estPopulation), fill = "Within 1/4 mile of a bus stop"), stat = "identity") +
+
+  scale_fill_manual(values = c(
+    "Further than 1/2 mile" = "#141414",
+    "Within 1/2 mile" = "#91375F",
+    "Within 1/4 mile of a bus stop" = "#F8509C"
+  ),
+  breaks = c(
+    "Within 1/4 mile of a bus stop", "Within 1/2 mile", "Further than 1/2 mile")
+  ) +
+  
+  labs(
+    title = "Total homes walking distance from a bus stop",
+    subtitle = "Most populous census tracts",
+    y = "Tract",
+    x = "Total homes & apartment units",
+    fill = "Total homes:",
+    caption = "Data from Montgomery County Planning Department, U.S. Census Bureau, MCDOT, & WMATA"
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(color = "#fff", size = 17, face = "bold"),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.subtitle = element_text(color = "#E7CEE0", size = 13, face = "bold"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = 0.5),
+    
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    
+    
+    axis.ticks = element_blank(),
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.title = element_text(color = "#fff"), 
+    axis.text.y = element_blank(),
+    
+    legend.position = c(0.86, 0.352),
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text = element_text(size = 12, face = "bold"),
+    legend.background = element_rect(fill = "transparent")
+    )
+# ggsave("homes_walking_distance_populous_tracts.png", width = 10, height = 7)
+```
+### Vehicles per household
+
+```{r}
+bus_data %>% 
+  filter(Geography != "1400000US24031700500") %>%
+  arrange(desc(estPopulation)) %>% 
+  top_n(60, estPopulation) %>% 
+  ggplot() +
+  geom_bar(aes(x = estHouseholds, y = reorder(Geography, estPopulation), fill = "A vehicle for every worker"), stat = "identity") +
+  geom_bar(aes(x = estHouseholds_LessVehiclesThanWorkers, y = reorder(Geography, estPopulation), fill = "Less vehicles than workers")
+           , color = "#E7CEE0", # to differentiate in this visual specifically
+           stat = "identity") +
+  geom_bar(aes(x = estHouseholds_0Vehicle, y = reorder(Geography, estPopulation), fill = "No vehicles"), stat = "identity") +
+  
+  scale_fill_manual(values = c(
+    "A vehicle for every worker" = "#141414",
+    "Less vehicles than workers" = "#91375F",
+    "No vehicles" = "#F8509C"
+  ),
+  breaks = c(
+    "No vehicles", "Less vehicles than workers", "A vehicle for every worker")
+  ) +
+
+  labs(
+    title = "Vehicles available per household",
+    subtitle = "Most populous census tracts",
+    y = "Tract",
+    x = "Total households",
+    fill = "Total households with:",
+    caption = "Data from the U.S. Census Bureau, MCDOT, & WMATA"
+  ) +
+  theme_light() +
+  theme(
+    plot.title = element_text(color = "#fff", size = 17, face = "bold"),
+    plot.background = element_rect(fill = "#141414", color = "#FF93C4"),
+    plot.subtitle = element_text(color = "#E7CEE0", size = 13, face = "bold"),
+    plot.caption = element_text(color = "#E7CEE0", size = 8, hjust = 0.5),
+    
+    panel.border = element_rect(linewidth = 0.45, color = "#FF93C4", fill = "#F9EFF6"),
+    panel.grid.major.y = element_line(color = "#F9EFF6"),
+    
+    
+    axis.ticks = element_blank(),
+    axis.line = element_line(linewidth = 0.75, color = "#141414"),
+    axis.text.x = element_text(color = "#E7CEE0"),
+    axis.title = element_text(color = "#fff"), 
+    axis.text.y = element_blank(),
+    
+    legend.position = c(0.87, 0.335 ),
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text = element_text(size = 12, face = "bold"),
+    legend.background = element_rect(fill = "transparent")
+    )
+
+# ggsave("household_vehicles_populous_tracts.png", width = 10, height = 7)
+```
