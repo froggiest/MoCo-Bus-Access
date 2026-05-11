@@ -1,15 +1,13 @@
 # libraries and datasets
 library(tidyverse)
-# Census tracts with intersecting RideOn routes:
-censustract_rideon <- read_csv("censustracts_rideonbusroutes.csv")
 # Residential buildings with census tracts:
-residentialhomes_censustracts <- read_csv("residential_homes_with_census_tracts.csv")
-# Residential buildings: BUS ROUTES (RideOn + Metrobus)
-residential_halfmile_route <- read_csv("halfmile_to_rdmetro_ROUTE_homes.csv") # half mile from a bus route
-residential_quartermile_route <- read_csv("quartermile_to_rdmetro_ROUTE_homes.csv") # quarte rmile from a bus route
-# Residential buildings: BUS STOPS (RideOn + Metrobus)
-residential_quartermile_stop <- read_csv("quartermile_to_rdmetro_Stop_homes.csv") # half mile from a bus stop
-residential_halfmile_stop <- read_csv("halfmile_to_rdmetro_Stop_homes.csv") # quarter mile from a bus stop
+residentialhomes_censustracts <- read_csv("homes_with_tracts.csv")
+# Residential buildings: Bus routes (RideOn + Metrobus)
+residential_halfmile_route <- read_csv("halfmile_from_bus_route.csv") # half mile from a bus route
+residential_quartermile_route <- read_csv("quartermile_from_bus_route.csv") # quarte rmile from a bus route
+# Residential buildings: Bus stops (RideOn + Metrobus)
+residential_quartermile_stop <- read_csv("quartermile_from_bus_stop.csv") # half mile from a bus stop
+residential_halfmile_stop <- read_csv("halfmile_from_bus_stop.csv") # quarter mile from a bus stop
 
 # remove columns that cause "problems"
 residentialhomes_censustracts <- residentialhomes_censustracts %>% select(-CLERK_PLAT)
@@ -91,6 +89,19 @@ residential_qr_hs_qs$quartermile_stop[is.na(residential_qr_hs_qs$quartermile_sto
 residential_qr_hs_qs <- residential_qr_hs_qs %>% 
   rename_at("GEOIDFQ",~"Geography")
 
+
+# make sure everything is correct by checking sums against subset lengths
+nrow(residential_halfmile_route)
+sum(residential_qr_hs_qs$halfmile_route)
+
+nrow(residential_halfmile_stop)
+sum(residential_qr_hs_qs$halfmile_stop)
+
+nrow(residential_quartermile_route)
+sum(residential_qr_hs_qs$quartermile_route)
+
+nrow(residential_quartermile_stop)
+sum(residential_qr_hs_qs$quartermile_stop)
 
 # save as csv
 # write_csv(residential_qr_hs_qs, "residentialbuildings_distances_census.csv")
