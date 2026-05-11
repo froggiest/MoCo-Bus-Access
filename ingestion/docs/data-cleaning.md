@@ -9,9 +9,9 @@ I used TIGER/Line Shapefiles from 2024 census tracts in Maryland. I selected onl
 - Calculated size of each tract in US survey miles\^2
 
 **2. Bus routes and stops**\
-I used the Ride On GTFS files with the GTFS Shapes to Features geoprocessing tool to map bus lines; GTFS Stops to Features to map bus stops\
-- Selected Metrobus lines and stops (from shapefiles) that intersect with Montgomery County; joined these to bus lines and bus stops from Ride On\
-- Joined bus routes to census tracts using a one-to-many spatial join\
+I used the Ride On GTFS files with the GTFS Shapes to Features geoprocessing tool to map bus lines; GTFS Stops to Features to map bus stops
+- Selected Metrobus lines and stops (from shapefiles) that intersect with Montgomery County; joined these to bus lines and bus stops from Ride On
+- Joined bus routes to census tracts using a one-to-many spatial join
 
 **3. Residential buildings**\
 I selected residential buildings from the property polygons dataset using the first 16 land use codes from the data dictionary linked on the [data overview](https://data-mcplanning.hub.arcgis.com/datasets/MCPlanning::property-polygons-file-geodatabase/about). These were codes 111, 116, 114, 115, 118, 119, 112, 113, 117, 140, 121, 122, 123, 124, 125, and 126. As a note, this includes religious quarters, boarding houses, membership lodgings, and nursing homes.\
