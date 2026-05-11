@@ -1,0 +1,206 @@
+---
+title: "1.0-data-cleaning"
+author: "Julian Beckert"
+format: html
+editor: visual
+---
+
+## Libraries & datasets
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+# Completely raw data:
+# Census American Community Survey data
+raw_householdsize <- read_csv("HouseholdSizeVehicles.csv")
+raw_numberofworkers <- read_csv("NumberOfWorkersVehicles.csv")
+raw_demographics <- read_csv("DemographicsHousing.csv")
+
+# All RideOn + Metrobus trips and ridership
+all_calendar_trips <- read_csv("metrobus_rideon_all_trips_calendar_schedule.csv")
+
+# Data adjusted in ArcGIS
+censustract_buses <- read_csv("MetroandRideOnRoutes_CensusTracts.csv") # Census tracts with intersecting bus routes
+cities <- read_csv("MontgomeryCounty_Cities_Tracts.csv")
+censustractarea <- read_csv("census_tracts_square_miles.csv") 
+```
+
+## Census
+
+### Household size
+
+```{r}
+household_firstrowstring <- as.character(raw_householdsize[1, ])
+names(raw_householdsize) <- household_firstrowstring
+householdsize <- raw_householdsize[-1,]
+
+names(householdsize) <- gsub("!!", "", names(householdsize))
+names(householdsize) <- gsub(":", "", names(householdsize))
+names(householdsize) <- gsub(" or more", "Plus", names(householdsize))
+names(householdsize) <- gsub("Estimate", "Est", names(householdsize))
+names(householdsize) <- gsub("Total", "Tot", names(householdsize))
+names(householdsize) <- gsub("Margin of Error", "MgOfErr", names(householdsize))
+names(householdsize) <- gsub("-", "", names(householdsize))
+names(householdsize) <- gsub("vehicle", "Vehicle", names(householdsize))
+names(householdsize) <- gsub("No ", "0", names(householdsize))
+names(householdsize) <- gsub("household", "", names(householdsize))
+names(householdsize) <- gsub("available", "", names(householdsize))
+names(householdsize) <- gsub(" ", "", names(householdsize))
+
+names(householdsize)[3:ncol(householdsize)] <- paste0("hs", names(householdsize))[3:ncol(householdsize)]
+```
+
+### Number of workers
+
+```{r}
+workers_firstrowstring <- as.character(raw_numberofworkers[1, ])
+names(raw_numberofworkers) <- workers_firstrowstring
+numberofworkers <- raw_numberofworkers[-1,]
+
+names(numberofworkers) <- gsub("!!", "", names(numberofworkers))
+names(numberofworkers) <- gsub(":", "", names(numberofworkers))
+names(numberofworkers) <- gsub("Estimate", "Est", names(numberofworkers))
+names(numberofworkers) <- gsub("Margin of Error", "MgOfErr", names(numberofworkers))
+names(numberofworkers) <- gsub("Total", "Tot", names(numberofworkers))
+names(numberofworkers) <- gsub("vehicle", "Vehicle", names(numberofworkers))
+names(numberofworkers) <- gsub("available", "", names(numberofworkers))
+names(numberofworkers) <- gsub("No ", "0", names(numberofworkers))
+names(numberofworkers) <- gsub(" or more ", "Plus", names(numberofworkers))
+names(numberofworkers) <- gsub(", ", "_",
+                                    gsub(" -", "",
+                                         gsub(" ", "_", names(numberofworkers))))
+
+names(numberofworkers)[3:ncol(numberofworkers)] <- paste0("nw", names(numberofworkers)[3:ncol(numberofworkers)])
+```
+
+### Demographics
+
+```{r}
+demographics_firstrowstring <- as.character(raw_demographics[1, ])
+names(raw_demographics) <- demographics_firstrowstring
+demographics <- raw_demographics[-1,]
+
+demographics <- demographics %>% 
+  select(1:4, # geography & total population estimates
+         11:38 # age
+         )
+
+names(demographics) <- gsub("!!SEX AND AGE!!", "", names(demographics))
+names(demographics) <- gsub("Total", "Tot", names(demographics))
+names(demographics) <- gsub("Estimate", "Est", names(demographics))
+names(demographics) <- gsub("Margin of Error", "MgOfErr", names(demographics))
+names(demographics) <- gsub("population", "Pop", names(demographics))
+names(demographics) <- gsub("years", "Yrs", names(demographics))
+names(demographics) <- gsub("age", "Age", names(demographics))
+names(demographics) <- gsub("!!", "", names(demographics))
+names(demographics) <- gsub("\\(", "", 
+                            gsub("\\)", "",
+                            names(demographics)))
+names(demographics) <- gsub("and over", "And Over", names(demographics))
+names(demographics) <- gsub(" ", "", names(demographics))
+
+names(demographics)[3:ncol(demographics)] <- paste0("dmg", names(demographics)[3:ncol(demographics)])
+```
+
+### Combine
+
+```{r}
+acs1 <- merge(householdsize, numberofworkers, by = "Geography")
+acs <- merge(acs1, demographics, by = "Geography")
+
+# rename geographic area column to get the census tract shorthands
+t_acs <- acs %>% 
+  select(-GeographicAreaName.y, -Geographic_Area_Name, -hsNA, -nwNA) %>%
+  rename_at("GeographicAreaName.x",~"TractName") %>% 
+  filter(grepl("\\d", TractName))
+t_acs$TractName <- gsub("\\D", "", t_acs$TractName)
+
+
+# check to see if "hsEstTot" and "nwEstTot" (estimated total households per tract) are the same, so I can remove one
+identical(t_acs$hsEstTot, t_acs$nwEstTot)
+
+acs <- t_acs %>% 
+  rename_at("hsEstTot", ~ "hsnwEstTot") %>% 
+  select(-nwEstTot)
+
+# write_csv(acs, "all_american_community_survey.csv")
+```
+
+```{r}
+clean_censustract_buses <- censustract_buses %>% 
+  # remove unneeded columns
+  select(-Join_Count, -TARGET_FID, -JOIN_FID, -TYPE, -EGIS_ID, -STR_DATE, -END_DATE, -SNOW_ROUTE, -GLOBALID, -SE_ANNO_CA, -FUNCSTAT, -NAMELSAD, -ALAND, -AWATER, -INTPTLAT, -INTPTLON, -Shape_Length) %>% 
+  # combine route name columns
+  mutate(route_name = paste(ROUTE, route_short_name, sep = "/")) %>% 
+  relocate(route_name, .after = SHAPELEN)
+clean_censustract_buses$route_name <- gsub("/NA", "", clean_censustract_buses$route_name)
+clean_censustract_buses$route_name <- gsub("NA/", "", clean_censustract_buses$route_name)
+
+distinct_censustract_buses <- clean_censustract_buses %>%
+  # make names match other datasets
+  rename_at("GEOIDFQ", ~ "Geography") %>%
+  distinct(
+    Geography, route_name,  # remove rows with duplicates of these two columns
+    .keep_all = TRUE) %>%
+  # remove more unneeded columns
+  select(-STATEFP, -COUNTYFP, -agency_id, -MTFCC, -route_url, -route_type)
+
+censustract_buses_calendar <- left_join(distinct_censustract_buses, all_calendar_trips)
+
+censustract_buses_calendar <- censustract_buses_calendar %>% 
+  relocate(c(TRACTCE, GEOID, Geography, NAME, route_name), .before = DESCRIPTIO)
+
+
+# filter the bus schedule (all_calendar_trips) to be only bus routes that have service in Montgomery County
+moco_bus_routes <- distinct_censustract_buses %>% 
+  group_by(route_name) %>% 
+  summarise(moco = 1)
+moco_bus_schedule <- left_join(all_calendar_trips, moco_bus_routes)
+moco_bus_schedule <- moco_bus_schedule %>% 
+  filter(!is.na(moco)) %>% 
+  select(-moco)
+
+# write_csv(moco_bus_schedule, "mocobuses_all_trips_calendar_schedule.csv")
+```
+
+## Census tract size + city
+
+Add city names and the size (square miles) of census tracts, then download.
+
+```{r}
+cities_usable <- cities %>% 
+  rename_at("GEOIDFQ",~"Geography") %>% 
+  rename_at("name",~"City") %>% 
+  select(City, Geography, TRACTCE)
+
+censustractarea_usable <- censustractarea %>% rename_at("GEOIDFQ",~"Geography") %>% 
+  select(
+    TRACTCE, Geography, SquareMile
+  )
+census_tract_cities_area <- merge(cities_usable, censustractarea_usable)
+
+censustract_buses_calendar_size <- left_join(censustract_buses_calendar, censustractarea_usable %>% 
+                                               select(Geography, SquareMile), by = "Geography")
+
+cities_buses_join <- left_join(censustract_buses_calendar_size, census_tract_cities_area)
+
+cities_buses <- cities_buses_join %>% 
+  group_by(City, route_name) %>% 
+  summarise(
+    census_tracts_intersected = n_distinct(Geography),
+    wkday_departures = wkday_departures, 
+    sat_departures = sat_departures, 
+    sun_departures = sun_departures, 
+    agency = agency, 
+    wkday_riders = wkday_riders, 
+    sat_riders = sat_riders, 
+    sun_riders = sun_riders
+  ) %>% 
+  distinct(City, route_name, .keep_all = T)
+  
+# write_csv(cities_buses, "buses_by_city.csv")
+# write_csv(census_tract_cities_area, "censusandcitysize.csv")
+# write_csv(censustract_buses_calendar_size, "censustract_buses_ridership_calendar.csv")
+```
