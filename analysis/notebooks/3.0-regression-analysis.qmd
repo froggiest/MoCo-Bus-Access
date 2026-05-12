@@ -1,6 +1,6 @@
 ---
 title: "3.0-regression-analysis"
-author: "Julian Beckert"
+author: "JBeck"
 format:
   html:
     message: false
