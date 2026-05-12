@@ -1,6 +1,6 @@
 ---
 title: "3.0-statistics-numbers"
-author: "Julian Beckert"
+author: "JBeck"
 format:
   html:
     code-overflow: wrap
